@@ -46,7 +46,7 @@
     --input: 217 33% 17%;
     --ring: 38 92% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.375rem;
 
     --sidebar-background: 222 47% 7%;
     --sidebar-foreground: 215 20% 65%;
@@ -59,6 +59,10 @@
     --font-sans: Roboto, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
     --font-serif: "Source Serif Pro", ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
     --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+    --shadow-sm: 0px 1px 1.5px 0px hsla(210, 40%, 98%, 0.1);
+    --shadow: 0px 1px 3px 0px hsla(210, 40%, 98%, 0.1);
+    --shadow-md: 0px 1px 4.5px 0px hsla(210, 40%, 98%, 0.1);
+    --shadow-lg: 0px 1px 7.5px 0px hsla(210, 40%, 98%, 0.1);
 
   }
 
@@ -104,6 +108,11 @@
     --font-sans: Roboto, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
     --font-serif: "Source Serif Pro", ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
     --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+    --radius: 0.375rem;
+    --shadow-sm: 0px 1px 1.5px 0px hsla(210, 40%, 98%, 0.1);
+    --shadow: 0px 1px 3px 0px hsla(210, 40%, 98%, 0.1);
+    --shadow-md: 0px 1px 4.5px 0px hsla(210, 40%, 98%, 0.1);
+    --shadow-lg: 0px 1px 7.5px 0px hsla(210, 40%, 98%, 0.1);
   }
 }
 
