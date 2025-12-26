@@ -12,22 +12,10 @@ interface StatCardProps {
 }
 
 const colorClasses = {
-  primary: {
-    glow: "bg-primary",
-    icon: "bg-primary/20 text-primary",
-  },
-  success: {
-    glow: "bg-success",
-    icon: "bg-success/20 text-success",
-  },
-  info: {
-    glow: "bg-info",
-    icon: "bg-info/20 text-info",
-  },
-  warning: {
-    glow: "bg-warning",
-    icon: "bg-warning/20 text-warning",
-  },
+  primary: "bg-primary/10 text-primary",
+  success: "bg-success/10 text-success",
+  info: "bg-info/10 text-info",
+  warning: "bg-warning/10 text-warning",
 };
 
 const StatCard = ({
@@ -39,20 +27,16 @@ const StatCard = ({
   color,
   className,
 }: StatCardProps) => {
-  const colors = colorClasses[color];
-
   return (
-    <div className={cn("stat-card group", className)}>
-      <div className={cn("stat-card-glow", colors.glow)} />
-      
-      <div className="relative flex items-start justify-between">
+    <div className={cn("stat-card", className)}>
+      <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-muted-foreground mb-1">{title}</p>
-          <p className="text-3xl font-heading font-bold tracking-tight">{value}</p>
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className="text-2xl font-semibold mt-1">{value}</p>
           {change && (
             <p
               className={cn(
-                "text-sm mt-2 font-medium",
+                "text-xs mt-1",
                 changeType === "increase" && "text-success",
                 changeType === "decrease" && "text-destructive",
                 changeType === "neutral" && "text-muted-foreground"
@@ -63,13 +47,8 @@ const StatCard = ({
           )}
         </div>
         
-        <div
-          className={cn(
-            "w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110",
-            colors.icon
-          )}
-        >
-          <Icon className="w-6 h-6" />
+        <div className={cn("w-10 h-10 rounded-md flex items-center justify-center", colorClasses[color])}>
+          <Icon className="w-5 h-5" />
         </div>
       </div>
     </div>

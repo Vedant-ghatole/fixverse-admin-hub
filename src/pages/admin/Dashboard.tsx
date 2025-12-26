@@ -1,12 +1,10 @@
 import AdminLayout from "@/components/admin/AdminLayout";
 import StatCard from "@/components/admin/StatCard";
 import DataTable from "@/components/admin/DataTable";
-import StatusBadge from "@/components/admin/StatusBadge";
 import PageHeader from "@/components/admin/PageHeader";
-import { Users, Store, ShoppingCart, IndianRupee, Eye, Check, X, Activity } from "lucide-react";
+import { Users, Store, ShoppingCart, IndianRupee, Check, X, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Mock data
 const pendingApprovals = [
   { type: "Seller", name: "ABC Tools Pvt Ltd", requestedOn: "05 Dec 2025", id: 1 },
   { type: "Product", name: "Hydraulic Jack 500T", requestedOn: "04 Dec 2025", id: 2 },
@@ -18,7 +16,6 @@ const recentActivities = [
   { activity: "Seller payout processed", user: "FixTools Pvt Ltd", date: "Yesterday, 6:30 PM" },
   { activity: "New seller registered", user: "AutoParts Hub", date: "Yesterday, 4:15 PM" },
   { activity: "Product approved", user: "Drill Machine Pro", date: "2 days ago" },
-  { activity: "Support ticket resolved", user: "Ticket #7821", date: "2 days ago" },
 ];
 
 const Dashboard = () => {
@@ -32,11 +29,11 @@ const Dashboard = () => {
       render: () => (
         <div className="flex items-center gap-2">
           <button className="action-btn action-btn-success">
-            <Check className="w-3.5 h-3.5" />
+            <Check className="w-3 h-3" />
             Approve
           </button>
           <button className="action-btn action-btn-danger">
-            <X className="w-3.5 h-3.5" />
+            <X className="w-3 h-3" />
             Reject
           </button>
         </div>
@@ -49,10 +46,8 @@ const Dashboard = () => {
       key: "activity",
       header: "Activity",
       render: (item: typeof recentActivities[0]) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Activity className="w-4 h-4 text-primary" />
-          </div>
+        <div className="flex items-center gap-2">
+          <Activity className="w-4 h-4 text-muted-foreground" />
           <span>{item.activity}</span>
         </div>
       ),
@@ -64,12 +59,11 @@ const Dashboard = () => {
   return (
     <AdminLayout>
       <PageHeader
-        title="Admin Dashboard"
-        description="Platform activity & system control overview"
+        title="Dashboard"
+        description="Platform overview"
       />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           title="Total Users"
           value="1,240"
@@ -77,7 +71,6 @@ const Dashboard = () => {
           changeType="increase"
           icon={Users}
           color="primary"
-          className="animate-slide-up opacity-0 stagger-1"
         />
         <StatCard
           title="Total Sellers"
@@ -86,7 +79,6 @@ const Dashboard = () => {
           changeType="increase"
           icon={Store}
           color="success"
-          className="animate-slide-up opacity-0 stagger-2"
         />
         <StatCard
           title="Total Orders"
@@ -95,7 +87,6 @@ const Dashboard = () => {
           changeType="increase"
           icon={ShoppingCart}
           color="info"
-          className="animate-slide-up opacity-0 stagger-3"
         />
         <StatCard
           title="Platform Revenue"
@@ -104,28 +95,24 @@ const Dashboard = () => {
           changeType="increase"
           icon={IndianRupee}
           color="warning"
-          className="animate-slide-up opacity-0 stagger-4"
         />
       </div>
 
-      {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending Approvals */}
-        <div className="animate-fade-in">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-heading font-semibold">Pending Approvals</h2>
-            <Button variant="ghost" size="sm" className="text-primary hover:text-primary">
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-medium">Pending Approvals</h2>
+            <Button variant="ghost" size="sm" className="text-primary text-xs">
               View All
             </Button>
           </div>
           <DataTable columns={approvalColumns} data={pendingApprovals} />
         </div>
 
-        {/* Recent Activities */}
-        <div className="animate-fade-in">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-heading font-semibold">Recent Activities</h2>
-            <Button variant="ghost" size="sm" className="text-primary hover:text-primary">
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-medium">Recent Activities</h2>
+            <Button variant="ghost" size="sm" className="text-primary text-xs">
               View All
             </Button>
           </div>
@@ -133,29 +120,28 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Quick Stats Bar */}
-      <div className="mt-8 p-6 rounded-xl bg-gradient-to-r from-primary/10 via-card to-info/10 border border-border">
+      <div className="mt-6 p-4 rounded-lg bg-card border border-border">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-heading font-semibold text-lg mb-1">Quick Overview</h3>
-            <p className="text-muted-foreground text-sm">Today's platform performance</p>
+            <h3 className="font-medium">Today's Overview</h3>
+            <p className="text-muted-foreground text-sm">Platform performance</p>
           </div>
           <div className="flex items-center gap-8">
             <div className="text-center">
-              <p className="text-2xl font-bold text-primary">24</p>
+              <p className="text-xl font-semibold text-primary">24</p>
               <p className="text-xs text-muted-foreground">New Orders</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-success">₹1,24,500</p>
-              <p className="text-xs text-muted-foreground">Today's Revenue</p>
+              <p className="text-xl font-semibold text-success">₹1,24,500</p>
+              <p className="text-xs text-muted-foreground">Revenue</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-info">12</p>
+              <p className="text-xl font-semibold text-info">12</p>
               <p className="text-xs text-muted-foreground">New Users</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-warning">5</p>
-              <p className="text-xs text-muted-foreground">Pending Tickets</p>
+              <p className="text-xl font-semibold text-warning">5</p>
+              <p className="text-xs text-muted-foreground">Tickets</p>
             </div>
           </div>
         </div>

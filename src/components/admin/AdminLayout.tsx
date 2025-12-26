@@ -12,40 +12,34 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     <div className="min-h-screen bg-background">
       <AdminSidebar />
       
-      {/* Main Content */}
-      <div className="ml-64">
-        {/* Top Bar */}
-        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
-          <div className="flex items-center justify-between px-8 py-4">
-            <div className="relative w-96">
+      <div className="ml-56">
+        <header className="sticky top-0 z-40 bg-background border-b border-border">
+          <div className="flex items-center justify-between px-6 py-3">
+            <div className="relative w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search users, products, orders..."
-                className="pl-10 bg-muted/50 border-border focus:bg-card"
+                placeholder="Search..."
+                className="pl-9 h-9 bg-muted border-0 text-sm"
               />
             </div>
             
-            <div className="flex items-center gap-4">
-              <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
-                <Bell className="w-5 h-5 text-muted-foreground" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+            <div className="flex items-center gap-3">
+              <button className="relative p-2 rounded-md hover:bg-muted">
+                <Bell className="w-4 h-4 text-muted-foreground" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-primary rounded-full" />
               </button>
               
-              <div className="flex items-center gap-3 pl-4 border-l border-border">
-                <div className="text-right">
-                  <p className="text-sm font-medium">Welcome back</p>
-                  <p className="text-xs text-muted-foreground">Super Admin</p>
+              <div className="flex items-center gap-2 pl-3 border-l border-border">
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                  <span className="text-xs font-medium">SA</span>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-warning flex items-center justify-center">
-                  <span className="text-sm font-bold text-primary-foreground">SA</span>
-                </div>
+                <span className="text-sm">Admin</span>
               </div>
             </div>
           </div>
         </header>
         
-        {/* Page Content */}
-        <main className="p-8">
+        <main className="p-6">
           {children}
         </main>
       </div>
