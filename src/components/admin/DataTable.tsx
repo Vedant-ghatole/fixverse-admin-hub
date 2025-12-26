@@ -20,7 +20,7 @@ function DataTable<T extends Record<string, any>>({
   className,
 }: DataTableProps<T>) {
   return (
-    <div className={cn("overflow-hidden rounded-xl border border-border bg-card", className)}>
+    <div className={cn("overflow-hidden rounded-lg border border-border bg-card", className)}>
       <div className="overflow-x-auto">
         <table className="data-table">
           <thead>
