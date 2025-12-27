@@ -2,8 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AdminSidebar from "./AdminSidebar";
-import { Bell, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Bell } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 
 interface AdminLayoutProps {
@@ -13,13 +12,37 @@ interface AdminLayoutProps {
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const checkAdminRole = async (userId: string) => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error checking admin role:", error);
+        setIsAdmin(false);
+        return;
+      }
+
+      setIsAdmin(!!data);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user ?? null);
         if (!session) {
           navigate("/login");
+        } else {
+          // Defer the role check to avoid Supabase client deadlock
+          setTimeout(() => {
+            checkAdminRole(session.user.id);
+          }, 0);
         }
       }
     );
@@ -28,13 +51,48 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       setUser(session?.user ?? null);
       if (!session) {
         navigate("/login");
+        setIsLoading(false);
+      } else {
+        checkAdminRole(session.user.id).finally(() => setIsLoading(false));
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  if (!user) return null;
+  // Show loading while checking authentication and role
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  // If user is authenticated but not an admin, show access denied
+  if (user && isAdmin === false) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
+          <p className="text-muted-foreground">
+            You do not have administrator privileges to access this area.
+          </p>
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate("/login");
+            }}
+            className="text-primary hover:underline"
+          >
+            Return to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-background">
