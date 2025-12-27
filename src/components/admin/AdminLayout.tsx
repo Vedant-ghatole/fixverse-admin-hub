@@ -1,6 +1,7 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface AdminLayoutProps {
@@ -8,6 +9,20 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const isAuthenticated = sessionStorage.getItem("isAuthenticated") === "true";
+    if (!isAuthenticated) {
+      navigate("/login");
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("isAuthenticated");
+    navigate("/login");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <AdminSidebar />
@@ -35,6 +50,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 </div>
                 <span className="text-sm">Admin</span>
               </div>
+
+              <button 
+                onClick={handleLogout}
+                className="p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </header>
