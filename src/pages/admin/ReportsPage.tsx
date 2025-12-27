@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import DataTable from "@/components/admin/DataTable";
 import PageHeader from "@/components/admin/PageHeader";
@@ -24,66 +25,98 @@ import {
   Bar,
   Legend,
 } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
 
-const salesData = [
-  { date: "01 Dec", sales: 45000, orders: 24 },
-  { date: "02 Dec", sales: 52000, orders: 31 },
-  { date: "03 Dec", sales: 48000, orders: 28 },
-  { date: "04 Dec", sales: 61000, orders: 35 },
-  { date: "05 Dec", sales: 75200, orders: 42 },
-  { date: "06 Dec", sales: 68000, orders: 38 },
-  { date: "07 Dec", sales: 82000, orders: 45 },
-];
+interface SalesData {
+  date_label: string;
+  sales: number;
+  orders: number;
+}
 
-const detailedReport = [
-  { date: "05 Dec 2025", orders: 124, sales: 752000, commission: 26240, refunds: 1200 },
-  { date: "04 Dec 2025", orders: 98, sales: 241300, commission: 24956, refunds: 2800 },
-  { date: "03 Dec 2025", orders: 112, sales: 580000, commission: 22400, refunds: 0 },
-  { date: "02 Dec 2025", orders: 89, sales: 320000, commission: 18500, refunds: 3500 },
-  { date: "01 Dec 2025", orders: 105, sales: 485000, commission: 21200, refunds: 1800 },
-];
+interface DetailedReport {
+  date_label: string;
+  orders: number;
+  sales: number;
+  commission: number;
+  refunds: number;
+}
 
-const categoryData = [
-  { category: "Tools", sales: 450000, orders: 245 },
-  { category: "Machinery", sales: 680000, orders: 89 },
-  { category: "Safety", sales: 120000, orders: 312 },
-  { category: "Spare Parts", sales: 280000, orders: 456 },
-];
+interface CategoryData {
+  category: string;
+  sales: number;
+  orders: number;
+}
 
 const ReportsPage = () => {
+  const [salesData, setSalesData] = useState<SalesData[]>([]);
+  const [detailedReport, setDetailedReport] = useState<DetailedReport[]>([]);
+  const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const [salesRes, detailedRes, categoryRes] = await Promise.all([
+        supabase.from("report_sales_daily").select("*").order("date_label"),
+        supabase.from("report_detailed").select("*").order("date_label", { ascending: false }),
+        supabase.from("report_category").select("*").order("category"),
+      ]);
+
+      if (salesRes.error) console.error("Error fetching sales data:", salesRes.error);
+      if (detailedRes.error) console.error("Error fetching detailed report:", detailedRes.error);
+      if (categoryRes.error) console.error("Error fetching category data:", categoryRes.error);
+
+      setSalesData(salesRes.data || []);
+      setDetailedReport(detailedRes.data || []);
+      setCategoryData(categoryRes.data || []);
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
+
   const reportColumns = [
-    { key: "date", header: "Date" },
+    { key: "date_label", header: "Date" },
     {
       key: "orders",
       header: "Orders",
-      render: (item: typeof detailedReport[0]) => (
+      render: (item: DetailedReport) => (
         <span className="font-medium">{item.orders}</span>
       ),
     },
     {
       key: "sales",
       header: "Sales",
-      render: (item: typeof detailedReport[0]) => (
+      render: (item: DetailedReport) => (
         <span className="font-medium text-success">₹{item.sales.toLocaleString()}</span>
       ),
     },
     {
       key: "commission",
       header: "Commission",
-      render: (item: typeof detailedReport[0]) => (
+      render: (item: DetailedReport) => (
         <span className="font-medium text-primary">₹{item.commission.toLocaleString()}</span>
       ),
     },
     {
       key: "refunds",
       header: "Refunds",
-      render: (item: typeof detailedReport[0]) => (
+      render: (item: DetailedReport) => (
         <span className={item.refunds > 0 ? "text-destructive" : "text-muted-foreground"}>
           {item.refunds > 0 ? `-₹${item.refunds.toLocaleString()}` : "₹0"}
         </span>
       ),
     },
   ];
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading reports...</div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -179,7 +212,7 @@ const ReportsPage = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={salesData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <XAxis dataKey="date_label" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <Tooltip
                     contentStyle={{
@@ -232,7 +265,7 @@ const ReportsPage = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={salesData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <XAxis dataKey="date_label" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <Tooltip
                     contentStyle={{

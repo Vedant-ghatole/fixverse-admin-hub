@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import DataTable from "@/components/admin/DataTable";
 import StatusBadge from "@/components/admin/StatusBadge";
 import PageHeader from "@/components/admin/PageHeader";
-import { Eye, Check, X, Ban, Package } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Eye, Check, X, Ban } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,31 +13,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
-  id: number;
+  id: string;
+  product_code: string;
   name: string;
   seller: string;
   category: string;
   price: number;
   status: "pending" | "approved" | "rejected";
-  image: string;
+  icon: string;
 }
-
-const products: Product[] = [
-  { id: 1, name: "Hydraulic Jack 500T", seller: "FixTools", category: "Tools", price: 24500, status: "pending", image: "🔧" },
-  { id: 2, name: "Drill Machine Pro", seller: "PowerHub", category: "Machinery", price: 22500, status: "approved", image: "⚙️" },
-  { id: 3, name: "Safety Helmet Industrial", seller: "SafeGear", category: "Safety", price: 2650, status: "rejected", image: "🪖" },
-  { id: 4, name: "Electric Motor 5HP", seller: "MotorParts India", category: "Machinery", price: 18500, status: "approved", image: "🔌" },
-  { id: 5, name: "Welding Machine Arc 250A", seller: "FixTools", category: "Tools", price: 35000, status: "pending", image: "⚡" },
-  { id: 6, name: "Compressor 10HP", seller: "PowerHub", category: "Machinery", price: 85000, status: "approved", image: "🏭" },
-  { id: 7, name: "Tool Kit Premium 150pc", seller: "AutoParts Hub", category: "Tools", price: 4500, status: "pending", image: "🧰" },
-  { id: 8, name: "Safety Goggles Pro", seller: "SafeGear", category: "Safety", price: 850, status: "approved", image: "🥽" },
-];
 
 const ProductsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching products:", error);
+      } else {
+        setProducts(data || []);
+      }
+      setLoading(false);
+    };
+
+    fetchProducts();
+  }, []);
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = 
@@ -50,11 +60,11 @@ const ProductsPage = () => {
 
   const columns = [
     {
-      key: "image",
+      key: "icon",
       header: "Image",
       render: (product: Product) => (
         <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-2xl">
-          {product.image}
+          {product.icon}
         </div>
       ),
     },
@@ -64,7 +74,7 @@ const ProductsPage = () => {
       render: (product: Product) => (
         <div>
           <p className="font-medium">{product.name}</p>
-          <p className="text-xs text-muted-foreground">ID: PRD-{product.id.toString().padStart(4, "0")}</p>
+          <p className="text-xs text-muted-foreground">ID: {product.product_code}</p>
         </div>
       ),
     },
@@ -121,6 +131,16 @@ const ProductsPage = () => {
       ),
     },
   ];
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading products...</div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
