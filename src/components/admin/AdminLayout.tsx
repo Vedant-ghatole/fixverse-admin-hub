@@ -1,8 +1,10 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import AdminSidebar from "./AdminSidebar";
 import { Bell, Search, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { User } from "@supabase/supabase-js";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -10,18 +12,50 @@ interface AdminLayoutProps {
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem("isAuthenticated") === "true";
-    if (!isAuthenticated) {
-      navigate("/login");
-    }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+        if (!session) {
+          navigate("/login");
+        }
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (!session) {
+        navigate("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("isAuthenticated");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate("/login");
   };
+
+  const getInitials = () => {
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    return user?.email?.slice(0, 2).toUpperCase() || "AD";
+  };
+
+  const getDisplayName = () => {
+    return user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Admin";
+  };
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,9 +80,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               
               <div className="flex items-center gap-2 pl-3 border-l border-border">
                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                  <span className="text-xs font-medium">SA</span>
+                  <span className="text-xs font-medium">{getInitials()}</span>
                 </div>
-                <span className="text-sm">Admin</span>
+                <span className="text-sm">{getDisplayName()}</span>
               </div>
 
               <button 
