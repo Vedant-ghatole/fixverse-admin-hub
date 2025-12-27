@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import DataTable from "@/components/admin/DataTable";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -13,35 +13,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 interface Order {
   id: string;
+  order_number: string;
   buyer: string;
   seller: string;
   total: number;
   payment: "paid" | "refunded" | "pending";
   status: "new" | "shipped" | "delivered" | "cancelled" | "refunded";
-  placedOn: string;
+  placed_on: string;
 }
-
-const orders: Order[] = [
-  { id: "#OD1234", buyer: "Rahul Sharma", seller: "FixTools", total: 25000, payment: "paid", status: "new", placedOn: "05 Dec 2025" },
-  { id: "#OD1235", buyer: "Amit Verma", seller: "PowerHub", total: 28200, payment: "paid", status: "shipped", placedOn: "03 Dec 2025" },
-  { id: "#OD1236", buyer: "Sita Patel", seller: "SafeGear", total: 3250, payment: "refunded", status: "cancelled", placedOn: "01 Dec 2025" },
-  { id: "#OD1237", buyer: "Priya Menon", seller: "FixTools", total: 15000, payment: "paid", status: "delivered", placedOn: "28 Nov 2025" },
-  { id: "#OD1238", buyer: "Vikram Singh", seller: "AutoParts Hub", total: 8500, payment: "paid", status: "shipped", placedOn: "02 Dec 2025" },
-  { id: "#OD1239", buyer: "Neha Gupta", seller: "PowerHub", total: 42000, payment: "paid", status: "new", placedOn: "06 Dec 2025" },
-  { id: "#OD1240", buyer: "Raj Kumar", seller: "SafeGear", total: 1850, payment: "paid", status: "delivered", placedOn: "25 Nov 2025" },
-  { id: "#OD1241", buyer: "Anita Desai", seller: "MotorParts India", total: 18500, payment: "refunded", status: "refunded", placedOn: "30 Nov 2025" },
-];
 
 const OrdersPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sellerFilter, setSellerFilter] = useState("all");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("placed_on", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching orders:", error);
+      } else {
+        setOrders(data || []);
+      }
+      setLoading(false);
+    };
+
+    fetchOrders();
+  }, []);
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch = 
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.buyer.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.seller.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSeller = sellerFilter === "all" || order.seller === sellerFilter;
@@ -51,7 +63,7 @@ const OrdersPage = () => {
   const sellers = [...new Set(orders.map(o => o.seller))];
 
   const columns = [
-    { key: "id", header: "Order ID", className: "font-mono" },
+    { key: "order_number", header: "Order ID", className: "font-mono" },
     { key: "buyer", header: "Buyer" },
     { key: "seller", header: "Seller" },
     {
@@ -71,7 +83,11 @@ const OrdersPage = () => {
       header: "Status",
       render: (order: Order) => <StatusBadge status={order.status} />,
     },
-    { key: "placedOn", header: "Placed On" },
+    {
+      key: "placed_on",
+      header: "Placed On",
+      render: (order: Order) => format(new Date(order.placed_on), "dd MMM yyyy"),
+    },
     {
       key: "actions",
       header: "Actions",
@@ -109,6 +125,16 @@ const OrdersPage = () => {
       ),
     },
   ];
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading orders...</div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

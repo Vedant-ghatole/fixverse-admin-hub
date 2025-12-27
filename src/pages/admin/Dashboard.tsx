@@ -1,28 +1,58 @@
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import StatCard from "@/components/admin/StatCard";
 import DataTable from "@/components/admin/DataTable";
 import PageHeader from "@/components/admin/PageHeader";
 import { Users, Store, ShoppingCart, IndianRupee, Check, X, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
-const pendingApprovals = [
-  { type: "Seller", name: "ABC Tools Pvt Ltd", requestedOn: "05 Dec 2025", id: 1 },
-  { type: "Product", name: "Hydraulic Jack 500T", requestedOn: "04 Dec 2025", id: 2 },
-  { type: "Seller", name: "MotorParts India", requestedOn: "03 Dec 2025", id: 3 },
-];
+interface PendingApproval {
+  id: string;
+  type: "Seller" | "Product";
+  name: string;
+  requested_on: string;
+}
 
-const recentActivities = [
-  { activity: "New order placed", user: "Rahul Sharma (Buyer)", date: "Today, 2:45 PM" },
-  { activity: "Seller payout processed", user: "FixTools Pvt Ltd", date: "Yesterday, 6:30 PM" },
-  { activity: "New seller registered", user: "AutoParts Hub", date: "Yesterday, 4:15 PM" },
-  { activity: "Product approved", user: "Drill Machine Pro", date: "2 days ago" },
-];
+interface RecentActivity {
+  id: string;
+  activity: string;
+  activity_user: string;
+  date_text: string;
+}
 
 const Dashboard = () => {
+  const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([]);
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const [approvalsRes, activitiesRes] = await Promise.all([
+        supabase.from("pending_approvals").select("*").order("requested_on", { ascending: false }),
+        supabase.from("recent_activities").select("*").order("created_at", { ascending: false }),
+      ]);
+
+      if (approvalsRes.error) console.error("Error fetching pending approvals:", approvalsRes.error);
+      if (activitiesRes.error) console.error("Error fetching recent activities:", activitiesRes.error);
+
+      setPendingApprovals(approvalsRes.data || []);
+      setRecentActivities(activitiesRes.data || []);
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
+
   const approvalColumns = [
     { key: "type", header: "Type" },
     { key: "name", header: "Name" },
-    { key: "requestedOn", header: "Requested On" },
+    {
+      key: "requested_on",
+      header: "Requested On",
+      render: (item: PendingApproval) => format(new Date(item.requested_on), "dd MMM yyyy"),
+    },
     {
       key: "actions",
       header: "Actions",
@@ -45,16 +75,26 @@ const Dashboard = () => {
     {
       key: "activity",
       header: "Activity",
-      render: (item: typeof recentActivities[0]) => (
+      render: (item: RecentActivity) => (
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-muted-foreground" />
           <span>{item.activity}</span>
         </div>
       ),
     },
-    { key: "user", header: "User / Reference" },
-    { key: "date", header: "Date" },
+    { key: "activity_user", header: "User / Reference" },
+    { key: "date_text", header: "Date" },
   ];
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading dashboard...</div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

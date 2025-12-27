@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import DataTable from "@/components/admin/DataTable";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -19,56 +19,58 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 interface Ticket {
   id: string;
+  ticket_id: string;
   subject: string;
-  user: string;
-  userType: "Buyer" | "Seller";
+  ticket_user: string;
+  user_type: "Buyer" | "Seller";
   category: string;
   status: "open" | "in_progress" | "resolved";
   priority: "low" | "medium" | "high";
-  createdOn: string;
+  created_on: string;
 }
 
-const tickets: Ticket[] = [
-  { id: "#7821", subject: "Payout delayed for order #OD1234", user: "FixTools Pvt Ltd", userType: "Seller", category: "Payout Problems", status: "open", priority: "high", createdOn: "05 Dec 2025" },
-  { id: "#7820", subject: "Order not delivered", user: "Rahul Sharma", userType: "Buyer", category: "Order Issues", status: "in_progress", priority: "high", createdOn: "04 Dec 2025" },
-  { id: "#7819", subject: "Product listing rejected incorrectly", user: "PowerHub Industries", userType: "Seller", category: "Store & Product", status: "open", priority: "medium", createdOn: "04 Dec 2025" },
-  { id: "#7818", subject: "Refund not received", user: "Sita Patel", userType: "Buyer", category: "Payments & Refunds", status: "in_progress", priority: "high", createdOn: "03 Dec 2025" },
-  { id: "#7817", subject: "Login issues with OTP", user: "Amit Verma", userType: "Buyer", category: "Account Help", status: "resolved", priority: "low", createdOn: "02 Dec 2025" },
-  { id: "#7816", subject: "Commission calculation dispute", user: "SafeGear Solutions", userType: "Seller", category: "Payout Problems", status: "resolved", priority: "medium", createdOn: "01 Dec 2025" },
-  { id: "#7815", subject: "Wrong product delivered", user: "Priya Menon", userType: "Buyer", category: "Order Issues", status: "resolved", priority: "medium", createdOn: "30 Nov 2025" },
-];
-
-const faqs = [
-  {
-    question: "How do I track my order?",
-    answer: "Go to Orders > Track Order to see real-time updates on your order status including shipping and delivery information."
-  },
-  {
-    question: "How long does a refund take?",
-    answer: "Refunds are processed within 5-7 working days after the return is received and verified by our team."
-  },
-  {
-    question: "How can sellers request a payout?",
-    answer: "Sellers can request payouts from their dashboard under Payments & Earnings. Payouts are processed within 3-5 working days."
-  },
-  {
-    question: "What is the commission structure?",
-    answer: "Commission rates vary by category: Tools (10%), Machinery (12%), Safety (8%), Spare Parts (15%). View the full breakdown in Payments & Commission settings."
-  },
-];
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  sort_order: number;
+}
 
 const SupportPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const [ticketsRes, faqsRes] = await Promise.all([
+        supabase.from("support_tickets").select("*").order("created_on", { ascending: false }),
+        supabase.from("faqs").select("*").order("sort_order"),
+      ]);
+
+      if (ticketsRes.error) console.error("Error fetching tickets:", ticketsRes.error);
+      if (faqsRes.error) console.error("Error fetching faqs:", faqsRes.error);
+
+      setTickets(ticketsRes.data || []);
+      setFaqs(faqsRes.data || []);
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
 
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch = 
-      ticket.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.ticket_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.user.toLowerCase().includes(searchTerm.toLowerCase());
+      ticket.ticket_user.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "all" || ticket.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
@@ -76,7 +78,7 @@ const SupportPage = () => {
   const categories = [...new Set(tickets.map(t => t.category))];
 
   const columns = [
-    { key: "id", header: "Ticket ID", className: "font-mono" },
+    { key: "ticket_id", header: "Ticket ID", className: "font-mono" },
     {
       key: "subject",
       header: "Subject",
@@ -88,13 +90,13 @@ const SupportPage = () => {
       ),
     },
     {
-      key: "user",
+      key: "ticket_user",
       header: "User",
       render: (ticket: Ticket) => (
         <div>
-          <p className="font-medium">{ticket.user}</p>
-          <span className={`text-xs ${ticket.userType === "Seller" ? "text-info" : "text-muted-foreground"}`}>
-            {ticket.userType}
+          <p className="font-medium">{ticket.ticket_user}</p>
+          <span className={`text-xs ${ticket.user_type === "Seller" ? "text-info" : "text-muted-foreground"}`}>
+            {ticket.user_type}
           </span>
         </div>
       ),
@@ -117,7 +119,11 @@ const SupportPage = () => {
       header: "Status",
       render: (ticket: Ticket) => <StatusBadge status={ticket.status} />,
     },
-    { key: "createdOn", header: "Created On" },
+    {
+      key: "created_on",
+      header: "Created On",
+      render: (ticket: Ticket) => format(new Date(ticket.created_on), "dd MMM yyyy"),
+    },
     {
       key: "actions",
       header: "Actions",
@@ -143,6 +149,16 @@ const SupportPage = () => {
       ),
     },
   ];
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading support data...</div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -225,7 +241,7 @@ const SupportPage = () => {
             <h3 className="font-heading font-semibold text-lg mb-4">Frequently Asked Questions</h3>
             <Accordion type="single" collapsible className="space-y-2">
               {faqs.map((faq, index) => (
-                <AccordionItem key={index} value={`faq-${index}`} className="border border-border rounded-lg px-4">
+                <AccordionItem key={faq.id} value={`faq-${index}`} className="border border-border rounded-lg px-4">
                   <AccordionTrigger className="text-left hover:no-underline">
                     {faq.question}
                   </AccordionTrigger>

@@ -1,10 +1,10 @@
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import DataTable from "@/components/admin/DataTable";
 import StatusBadge from "@/components/admin/StatusBadge";
 import PageHeader from "@/components/admin/PageHeader";
 import StatCard from "@/components/admin/StatCard";
 import { IndianRupee, Percent, Wallet, RefreshCw, Check, PauseCircle, Pencil } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -13,39 +13,76 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
-const commissionSettings = [
-  { category: "Tools", commission: 10, lastUpdated: "01 Dec 2025" },
-  { category: "Machinery", commission: 12, lastUpdated: "15 Nov 2025" },
-  { category: "Safety", commission: 8, lastUpdated: "20 Nov 2025" },
-  { category: "Spare Parts", commission: 15, lastUpdated: "10 Nov 2025" },
-];
+interface CommissionSetting {
+  id: string;
+  category: string;
+  commission: number;
+  last_updated: string;
+}
 
-const transactions = [
-  { id: "T9876", type: "Order", orderId: "#OD1234", seller: "FixTools", amount: 5000, status: "settled" as const, date: "05 Dec 2025" },
-  { id: "T9881", type: "Payout", orderId: "-", seller: "PowerHub", amount: 25000, status: "processed" as const, date: "03 Dec 2025" },
-  { id: "T9884", type: "Order", orderId: "#OD1237", seller: "FixTools", amount: 1500, status: "settled" as const, date: "28 Nov 2025" },
-  { id: "T9890", type: "Refund", orderId: "#OD1236", seller: "SafeGear", amount: -3250, status: "processed" as const, date: "01 Dec 2025" },
-  { id: "T9895", type: "Order", orderId: "#OD1238", seller: "AutoParts Hub", amount: 850, status: "pending" as const, date: "02 Dec 2025" },
-];
+interface Transaction {
+  id: string;
+  txn_id: string;
+  type: "order" | "payout" | "refund";
+  order_id: string;
+  seller: string;
+  amount: number;
+  status: "settled" | "processed" | "pending";
+  txn_date: string;
+}
 
-const payoutRequests = [
-  { id: "PR-221", seller: "FixTools", requestedAmount: 18000, availableBalance: 22400 },
-  { id: "PR-222", seller: "PowerHub", requestedAmount: 35000, availableBalance: 42000 },
-  { id: "PR-223", seller: "SafeGear", requestedAmount: 8500, availableBalance: 12000 },
-];
+interface PayoutRequest {
+  id: string;
+  request_id: string;
+  seller: string;
+  requested_amount: number;
+  available_balance: number;
+}
 
 const PaymentsPage = () => {
+  const [commissionSettings, setCommissionSettings] = useState<CommissionSetting[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const [commRes, txnRes, payoutRes] = await Promise.all([
+        supabase.from("commission_settings").select("*").order("category"),
+        supabase.from("transactions").select("*").order("txn_date", { ascending: false }),
+        supabase.from("payout_requests").select("*").order("created_at", { ascending: false }),
+      ]);
+
+      if (commRes.error) console.error("Error fetching commission settings:", commRes.error);
+      if (txnRes.error) console.error("Error fetching transactions:", txnRes.error);
+      if (payoutRes.error) console.error("Error fetching payout requests:", payoutRes.error);
+
+      setCommissionSettings(commRes.data || []);
+      setTransactions(txnRes.data || []);
+      setPayoutRequests(payoutRes.data || []);
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
+
   const commissionColumns = [
     { key: "category", header: "Category" },
     {
       key: "commission",
       header: "Commission %",
-      render: (item: typeof commissionSettings[0]) => (
+      render: (item: CommissionSetting) => (
         <span className="font-medium text-primary">{item.commission}%</span>
       ),
     },
-    { key: "lastUpdated", header: "Last Updated" },
+    {
+      key: "last_updated",
+      header: "Last Updated",
+      render: (item: CommissionSetting) => format(new Date(item.last_updated), "dd MMM yyyy"),
+    },
     {
       key: "actions",
       header: "Action",
@@ -59,26 +96,26 @@ const PaymentsPage = () => {
   ];
 
   const transactionColumns = [
-    { key: "id", header: "Txn ID", className: "font-mono" },
+    { key: "txn_id", header: "Txn ID", className: "font-mono" },
     {
       key: "type",
       header: "Type",
-      render: (item: typeof transactions[0]) => (
+      render: (item: Transaction) => (
         <span className={`status-badge ${
-          item.type === "Order" ? "bg-success/20 text-success" :
-          item.type === "Payout" ? "bg-info/20 text-info" :
+          item.type === "order" ? "bg-success/20 text-success" :
+          item.type === "payout" ? "bg-info/20 text-info" :
           "bg-destructive/20 text-destructive"
         }`}>
-          {item.type}
+          {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
         </span>
       ),
     },
-    { key: "orderId", header: "Order ID", className: "font-mono" },
+    { key: "order_id", header: "Order ID", className: "font-mono" },
     { key: "seller", header: "Seller" },
     {
       key: "amount",
       header: "Amount",
-      render: (item: typeof transactions[0]) => (
+      render: (item: Transaction) => (
         <span className={`font-medium ${item.amount < 0 ? "text-destructive" : "text-success"}`}>
           {item.amount < 0 ? "-" : "+"}₹{Math.abs(item.amount).toLocaleString()}
         </span>
@@ -87,26 +124,30 @@ const PaymentsPage = () => {
     {
       key: "status",
       header: "Status",
-      render: (item: typeof transactions[0]) => <StatusBadge status={item.status} />,
+      render: (item: Transaction) => <StatusBadge status={item.status} />,
     },
-    { key: "date", header: "Date" },
+    {
+      key: "txn_date",
+      header: "Date",
+      render: (item: Transaction) => format(new Date(item.txn_date), "dd MMM yyyy"),
+    },
   ];
 
   const payoutColumns = [
-    { key: "id", header: "Request ID", className: "font-mono" },
+    { key: "request_id", header: "Request ID", className: "font-mono" },
     { key: "seller", header: "Seller" },
     {
-      key: "requestedAmount",
+      key: "requested_amount",
       header: "Requested Amount",
-      render: (item: typeof payoutRequests[0]) => (
-        <span className="font-medium">₹{item.requestedAmount.toLocaleString()}</span>
+      render: (item: PayoutRequest) => (
+        <span className="font-medium">₹{item.requested_amount.toLocaleString()}</span>
       ),
     },
     {
-      key: "availableBalance",
+      key: "available_balance",
       header: "Available Balance",
-      render: (item: typeof payoutRequests[0]) => (
-        <span className="text-muted-foreground">₹{item.availableBalance.toLocaleString()}</span>
+      render: (item: PayoutRequest) => (
+        <span className="text-muted-foreground">₹{item.available_balance.toLocaleString()}</span>
       ),
     },
     {
@@ -126,6 +167,16 @@ const PaymentsPage = () => {
       ),
     },
   ];
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading payments...</div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
